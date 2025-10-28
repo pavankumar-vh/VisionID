@@ -1,0 +1,46 @@
+# VisionID - AI Face Recognition & Attendance System
+# Core Dependencies
+
+# ============= WEB FRAMEWORK =============
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# ============= AI & COMPUTER VISION =============
+insightface==0.7.3
+opencv-python==4.9.0.80
+numpy==1.24.3
+onnxruntime==1.16.3
+onnxruntime-gpu==1.16.3  # Remove if not using GPU
+
+# ============= DATABASE =============
+sqlalchemy==2.0.25
+psycopg2-binary==2.9.9  # PostgreSQL adapter (optional)
+alembic==1.13.1  # Database migrations
+
+# ============= DATA VALIDATION & SERIALIZATION =============
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# ============= IMAGE PROCESSING =============
+Pillow==10.2.0
+scikit-image==0.22.0
+
+# ============= UTILITIES =============
+python-dotenv==1.0.0
+aiofiles==23.2.1
+
+# ============= TESTING =============
+pytest==7.4.4
+pytest-asyncio==0.23.3
+httpx==0.26.0
+
+# ============= DEVELOPMENT =============
+black==24.1.1
+flake8==7.0.0
+mypy==1.8.0
+
+# ============= OPTIONAL ENHANCEMENTS =============
+# redis==5.0.1  # For caching
+# celery==5.3.4  # For async task queue
+# boto3==1.34.26  # For AWS S3 storage
