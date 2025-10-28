@@ -44,25 +44,30 @@ class FaceMatcher:
         similarity = dot_product / (norm1 * norm2)
         return float(similarity)
     
-    def find_match(
-        self, 
-        query_embedding: np.ndarray, 
-        database_embeddings: List[Tuple[str, np.ndarray]]
+    def match_embedding(
+        self,
+        query_embedding: np.ndarray,
+        known_embeddings: List[Tuple[str, np.ndarray]],
+        threshold: float = None
     ) -> Optional[Tuple[str, float]]:
         """
-        Find the best match for a query embedding in the database
+        Match a query embedding against known embeddings
         
         Args:
             query_embedding: Embedding to match
-            database_embeddings: List of (user_id, embedding) tuples
+            known_embeddings: List of (user_id, embedding) tuples
+            threshold: Override default similarity threshold
             
         Returns:
-            (user_id, similarity_score) of best match or None if no match
+            (user_id, similarity_score) of best match or None if no match above threshold
         """
-        best_match = None
-        best_score = self.similarity_threshold
+        if threshold is None:
+            threshold = self.similarity_threshold
         
-        for user_id, db_embedding in database_embeddings:
+        best_match = None
+        best_score = threshold
+        
+        for user_id, db_embedding in known_embeddings:
             similarity = self.compute_similarity(query_embedding, db_embedding)
             
             if similarity > best_score:
@@ -71,10 +76,29 @@ class FaceMatcher:
         
         return best_match
     
+    def find_match(
+        self, 
+        query_embedding: np.ndarray, 
+        database_embeddings: List[Tuple[str, np.ndarray]]
+    ) -> Optional[Tuple[str, float]]:
+        """
+        Find the best match for a query embedding in the database
+        (Alias for match_embedding for backward compatibility)
+        
+        Args:
+            query_embedding: Embedding to match
+            database_embeddings: List of (user_id, embedding) tuples
+            
+        Returns:
+            (user_id, similarity_score) of best match or None if no match
+        """
+        return self.match_embedding(query_embedding, database_embeddings)
+    
     def find_all_matches(
         self,
         query_embeddings: List[np.ndarray],
-        database_embeddings: List[Tuple[str, np.ndarray]]
+        database_embeddings: List[Tuple[str, np.ndarray]],
+        threshold: float = None
     ) -> List[Optional[Tuple[str, float]]]:
         """
         Find matches for multiple query embeddings
@@ -82,26 +106,60 @@ class FaceMatcher:
         Args:
             query_embeddings: List of embeddings to match
             database_embeddings: List of (user_id, embedding) tuples
+            threshold: Override default similarity threshold
             
         Returns:
             List of matches (user_id, score) or None for each query
         """
         matches = []
         for query_emb in query_embeddings:
-            match = self.find_match(query_emb, database_embeddings)
+            match = self.match_embedding(query_emb, database_embeddings, threshold)
             matches.append(match)
         return matches
     
-    def is_match(self, embedding1: np.ndarray, embedding2: np.ndarray) -> bool:
+    def is_match(self, embedding1: np.ndarray, embedding2: np.ndarray, threshold: float = None) -> bool:
         """
         Check if two embeddings match
         
         Args:
             embedding1: First embedding
             embedding2: Second embedding
+            threshold: Override default similarity threshold
             
         Returns:
             True if embeddings match, False otherwise
         """
+        if threshold is None:
+            threshold = self.similarity_threshold
+            
         similarity = self.compute_similarity(embedding1, embedding2)
-        return similarity >= self.similarity_threshold
+        return similarity >= threshold
+    
+    def get_top_matches(
+        self,
+        query_embedding: np.ndarray,
+        database_embeddings: List[Tuple[str, np.ndarray]],
+        top_k: int = 5
+    ) -> List[Tuple[str, float]]:
+        """
+        Get top K matches for a query embedding
+        
+        Args:
+            query_embedding: Embedding to match
+            database_embeddings: List of (user_id, embedding) tuples
+            top_k: Number of top matches to return
+            
+        Returns:
+            List of (user_id, similarity_score) tuples, sorted by score (descending)
+        """
+        similarities = []
+        
+        for user_id, db_embedding in database_embeddings:
+            similarity = self.compute_similarity(query_embedding, db_embedding)
+            similarities.append((user_id, similarity))
+        
+        # Sort by similarity score (descending)
+        similarities.sort(key=lambda x: x[1], reverse=True)
+        
+        # Return top K
+        return similarities[:top_k]
