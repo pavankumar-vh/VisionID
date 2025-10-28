@@ -1,0 +1,61 @@
+# VisionID Project Files
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# Uploads
+uploads/
+*.jpg
+*.jpeg
+*.png
+*.gif
+
+# Data
+data/embeddings/*.npy
+data/embeddings/*.pkl
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# Docker
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
