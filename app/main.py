@@ -52,11 +52,49 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Startup event
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database on startup"""
+    """Initialize database and services on startup"""
+    logger.info("=" * 60)
     logger.info("Starting VisionID API...")
-    init_db()
-    logger.info("Database initialized successfully")
-    logger.info("VisionID API ready!")
+    logger.info("=" * 60)
+    
+    try:
+        # Initialize database
+        init_db()
+        logger.info("✓ Database initialized successfully")
+        
+        # Log system information
+        import platform
+        logger.info(f"✓ Platform: {platform.system()} {platform.release()}")
+        logger.info(f"✓ Python: {platform.python_version()}")
+        
+        # Check GPU availability
+        try:
+            import insightface
+            # Try GPU first
+            test_app = insightface.app.FaceAnalysis(name='buffalo_l', providers=['CUDAExecutionProvider'])
+            test_app.prepare(ctx_id=0)
+            logger.info("✓ GPU Acceleration: ENABLED (CUDA)")
+        except:
+            logger.warning("⚠ GPU Acceleration: DISABLED (Using CPU)")
+        
+        logger.info("=" * 60)
+        logger.info("VisionID API Ready! 🚀")
+        logger.info("API Documentation: http://localhost:8000/docs")
+        logger.info("=" * 60)
+        
+    except Exception as e:
+        logger.error(f"✗ Startup failed: {str(e)}")
+        raise
+
+
+# Shutdown event
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown"""
+    logger.info("=" * 60)
+    logger.info("Shutting down VisionID API...")
+    logger.info("=" * 60)
+    logger.info("Cleanup completed. Goodbye! 👋")
 
 
 # Health check endpoint

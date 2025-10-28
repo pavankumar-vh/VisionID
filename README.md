@@ -103,6 +103,8 @@ docker build -t visionid .
 docker run -p 8000:8000 visionid
 ```
 
+**For detailed production deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md)**
+
 ---
 
 ## 🎯 Quick Start
@@ -274,7 +276,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [x] Phase 2: Face Detection & Embedding Implementation ✅
 - [x] Phase 3: User Registration System ✅
 - [x] Phase 4: Attendance System Implementation ✅
-- [ ] Phase 5: Testing & Optimization
-- [ ] Phase 6: Production Deployment
+- [x] Phase 5: Testing & Optimization ✅
+- [ ] Phase 6: Production Deployment (See DEPLOYMENT.md)
 
 ---

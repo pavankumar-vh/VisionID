@@ -9,21 +9,30 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: production
     container_name: visionid-api
     ports:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://visionid_user:visionid_pass@postgres:5432/visionid_db
       - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=info
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
       - ./uploads:/app/uploads
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - visionid-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/ping', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # PostgreSQL Database Service
   postgres:
@@ -33,6 +42,7 @@ services:
       - POSTGRES_DB=visionid_db
       - POSTGRES_USER=visionid_user
       - POSTGRES_PASSWORD=visionid_pass
+      - POSTGRES_INITDB_ARGS="-E UTF8"
     ports:
       - "5432:5432"
     volumes:
@@ -40,8 +50,14 @@ services:
     restart: unless-stopped
     networks:
       - visionid-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U visionid_user -d visionid_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Optional: pgAdmin for database management
+  # Uncomment to enable web-based database administration
   # pgadmin:
   #   image: dpage/pgadmin4:latest
   #   container_name: visionid-pgadmin
@@ -62,3 +78,5 @@ networks:
 
 volumes:
   postgres_data:
+    driver: local
+
