@@ -4,9 +4,13 @@ Main FastAPI Application with 99% Accuracy
 Built with FastAPI + InsightFace + GPU Acceleration
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.routes import recognize, register, attendance
+from app.models.database import init_db
+from app.utils.logger import logger
+import traceback
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -25,6 +29,34 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Global exception handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Global exception handler for clean error responses
+    """
+    logger.error(f"Global exception: {str(exc)}\n{traceback.format_exc()}")
+    
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "error": str(exc),
+            "detail": "An internal server error occurred"
+        }
+    )
+
+
+# Startup event
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database on startup"""
+    logger.info("Starting VisionID API...")
+    init_db()
+    logger.info("Database initialized successfully")
+    logger.info("VisionID API ready!")
 
 
 # Health check endpoint
