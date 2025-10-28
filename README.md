@@ -7,7 +7,7 @@
 [![InsightFace](https://img.shields.io/badge/InsightFace-0.7-orange.svg)](https://github.com/deepinsight/insightface)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**VisionID** is a real-time, high-accuracy face recognition system built with **FastAPI** and **InsightFace**. Built collaboratively with **GitHub Copilot Agentic AI** and powered by GPU acceleration for blazing-fast performance.
+**VisionID** is a real-time, high-accuracy face recognition system built with **FastAPI** and **InsightFace**, powered by GPU acceleration for blazing-fast performance.
 
 ---
 
@@ -257,7 +257,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **InsightFace** - For the amazing face recognition models
 - **FastAPI** - For the excellent web framework
-- **GitHub Copilot** - For AI-assisted development
 
 ---
 
@@ -280,5 +279,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ ] Phase 7: Deployment & Documentation
 
 ---
-
-**Built with ❤️ using GitHub Copilot Agentic AI**

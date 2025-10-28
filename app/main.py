@@ -12,8 +12,7 @@ from app.routes import recognize, register, attendance
 app = FastAPI(
     title="VisionID - AI Face Recognition & Attendance System",
     version="1.0.0",
-    description="Real-time face recognition system powered by InsightFace with 99%+ accuracy. "
-                "Built collaboratively with GitHub Copilot Agentic AI.",
+    description="Real-time face recognition system powered by InsightFace with 99%+ accuracy.",
     docs_url="/docs",
     redoc_url="/redoc",
 )
