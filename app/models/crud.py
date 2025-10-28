@@ -121,6 +121,13 @@ def get_today_attendance(db: Session) -> List[AttendanceLog]:
     ).all()
 
 
+def get_attendance_by_date(db: Session, target_date: date) -> List[AttendanceLog]:
+    """Get attendance records for a specific date"""
+    return db.query(AttendanceLog).filter(
+        func.date(AttendanceLog.timestamp) == target_date
+    ).all()
+
+
 def get_attendance_by_date_range(
     db: Session, 
     start_date: date, 
@@ -129,12 +136,12 @@ def get_attendance_by_date_range(
 ) -> List[AttendanceLog]:
     """Get attendance records for a date range"""
     query = db.query(AttendanceLog).filter(
-        AttendanceLog.timestamp >= start_date,
-        AttendanceLog.timestamp <= end_date
+        func.date(AttendanceLog.timestamp) >= start_date,
+        func.date(AttendanceLog.timestamp) <= end_date
     )
     if user_id:
         query = query.filter(AttendanceLog.user_id == user_id)
-    return query.all()
+    return query.order_by(AttendanceLog.timestamp.desc()).all()
 
 
 def get_user_attendance(db: Session, user_id: str, limit: int = 30) -> List[AttendanceLog]:
@@ -142,6 +149,23 @@ def get_user_attendance(db: Session, user_id: str, limit: int = 30) -> List[Atte
     return db.query(AttendanceLog).filter(
         AttendanceLog.user_id == user_id
     ).order_by(AttendanceLog.timestamp.desc()).limit(limit).all()
+
+
+def get_user_attendance_history(db: Session, user_id: str, limit: int = 30) -> List[AttendanceLog]:
+    """Get attendance history for a specific user (alias for compatibility)"""
+    return get_user_attendance(db, user_id, limit)
+
+
+def get_all_attendance_logs(db: Session) -> List[AttendanceLog]:
+    """Get all attendance logs"""
+    return db.query(AttendanceLog).all()
+
+
+def get_recent_attendance_logs(db: Session, limit: int = 10) -> List[AttendanceLog]:
+    """Get recent attendance logs"""
+    return db.query(AttendanceLog).order_by(
+        AttendanceLog.timestamp.desc()
+    ).limit(limit).all()
 
 
 # ============= RECOGNITION HISTORY OPERATIONS =============

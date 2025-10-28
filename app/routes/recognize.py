@@ -266,3 +266,173 @@ async def get_recognition_history(
     except Exception as e:
         log_error("Recognition History", str(e))
         raise HTTPException(status_code=500, detail=f"Failed to retrieve history: {str(e)}")
+
+
+@router.post("/recognize-bulk")
+async def recognize_bulk(
+    files: list[UploadFile] = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Recognize faces in multiple uploaded images
+    
+    Args:
+        files: List of image files to process
+        db: Database session
+        
+    Returns:
+        Recognition results grouped by image
+    """
+    try:
+        if len(files) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="No files provided"
+            )
+        
+        if len(files) > 50:
+            raise HTTPException(
+                status_code=400,
+                detail="Maximum 50 images allowed per request"
+            )
+        
+        # Get services
+        detector = get_face_detector()
+        embedder = get_face_embedder()
+        matcher = get_face_matcher()
+        
+        # Get known embeddings once
+        db_embeddings_data = crud.get_all_embeddings(db)
+        known_embeddings = []
+        
+        for user_id, emb_bytes in db_embeddings_data:
+            emb_array = embedder.bytes_to_embedding(emb_bytes)
+            known_embeddings.append((user_id, emb_array))
+        
+        # Process each image
+        async def process_image(file: UploadFile):
+            """Process a single image"""
+            try:
+                image_bytes = await file.read()
+                is_valid, error_msg = validate_image(image_bytes, max_size_mb=10)
+                
+                if not is_valid:
+                    return {
+                        "filename": file.filename,
+                        "success": False,
+                        "error": error_msg,
+                        "faces": []
+                    }
+                
+                image = read_image_file(image_bytes)
+                if image is None:
+                    return {
+                        "filename": file.filename,
+                        "success": False,
+                        "error": "Failed to read image",
+                        "faces": []
+                    }
+                
+                # Detect faces
+                detected_faces = detector.detect_faces(image, threshold=0.5)
+                
+                # Process faces concurrently
+                async def process_face(face_data):
+                    face_obj = face_data['face_obj']
+                    bbox = face_data['bbox']
+                    confidence = face_data['confidence']
+                    
+                    # Get embedding
+                    loop = asyncio.get_event_loop()
+                    embedding = await loop.run_in_executor(
+                        executor,
+                        embedder.get_embedding,
+                        face_obj
+                    )
+                    
+                    if embedding is None:
+                        return {
+                            "bbox": bbox,
+                            "confidence": confidence,
+                            "user_id": None,
+                            "name": "Unknown",
+                            "similarity": 0.0
+                        }
+                    
+                    # Match
+                    if len(known_embeddings) > 0:
+                        match_result = await loop.run_in_executor(
+                            executor,
+                            matcher.match_embedding,
+                            embedding,
+                            known_embeddings,
+                            0.6
+                        )
+                        
+                        if match_result:
+                            user_id, similarity = match_result
+                            user = crud.get_user(db, user_id)
+                            
+                            if user:
+                                return {
+                                    "bbox": bbox,
+                                    "confidence": confidence,
+                                    "user_id": user_id,
+                                    "name": user.name,
+                                    "similarity": similarity
+                                }
+                    
+                    return {
+                        "bbox": bbox,
+                        "confidence": confidence,
+                        "user_id": None,
+                        "name": "Unknown",
+                        "similarity": 0.0
+                    }
+                
+                # Process all faces in this image
+                faces = await asyncio.gather(*[process_face(face) for face in detected_faces])
+                
+                return {
+                    "filename": file.filename,
+                    "success": True,
+                    "detected_faces": len(detected_faces),
+                    "faces": faces
+                }
+                
+            except Exception as e:
+                return {
+                    "filename": file.filename,
+                    "success": False,
+                    "error": str(e),
+                    "faces": []
+                }
+        
+        # Process all images concurrently
+        results = await asyncio.gather(*[process_image(f) for f in files])
+        
+        # Calculate statistics
+        total_faces = sum(r["detected_faces"] for r in results if r["success"])
+        total_recognized = sum(
+            len([f for f in r["faces"] if f["user_id"] is not None])
+            for r in results if r["success"]
+        )
+        
+        return {
+            "success": True,
+            "total_images": len(files),
+            "processed_images": len([r for r in results if r["success"]]),
+            "total_faces_detected": total_faces,
+            "total_faces_recognized": total_recognized,
+            "results": results,
+            "message": f"Processed {len(files)} images with {total_faces} faces detected"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_error("Bulk Recognition", str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=f"Bulk recognition failed: {str(e)}"
+        )
