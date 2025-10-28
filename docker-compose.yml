@@ -1,0 +1,64 @@
+# VisionID - Docker Compose Configuration
+# Orchestrates VisionID API and PostgreSQL database
+
+version: '3.8'
+
+services:
+  # VisionID API Service
+  visionid-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: visionid-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://visionid_user:visionid_pass@postgres:5432/visionid_db
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    networks:
+      - visionid-network
+
+  # PostgreSQL Database Service
+  postgres:
+    image: postgres:15-alpine
+    container_name: visionid-postgres
+    environment:
+      - POSTGRES_DB=visionid_db
+      - POSTGRES_USER=visionid_user
+      - POSTGRES_PASSWORD=visionid_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - visionid-network
+
+  # Optional: pgAdmin for database management
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: visionid-pgadmin
+  #   environment:
+  #     - PGADMIN_DEFAULT_EMAIL=admin@visionid.com
+  #     - PGADMIN_DEFAULT_PASSWORD=admin
+  #   ports:
+  #     - "5050:80"
+  #   depends_on:
+  #     - postgres
+  #   restart: unless-stopped
+  #   networks:
+  #     - visionid-network
+
+networks:
+  visionid-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
